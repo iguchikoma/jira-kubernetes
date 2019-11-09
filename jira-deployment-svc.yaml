@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jira
+  namespace: jira
+  labels:
+    app: jira
+spec:
+  selector:
+    matchLabels:
+      app: jira
+      tier: jira
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jira
+        tier: jira
+    spec:
+      containers:
+      - image: atlassian/jira-software
+        name: jira
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: jira
+        volumeMounts:
+        - name: jira-persistent-storage
+          mountPath: /var/atlassian/application-data/jira
+      volumes:
+      - name: jira-persistent-storage
+        persistentVolumeClaim:
+          claimName: jira-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jira
+  namespace: jira
+  labels:
+    app: jira
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000
+  selector:
+    app: jira
+    tier: jira
